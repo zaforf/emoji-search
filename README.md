@@ -2,9 +2,9 @@
 title: Emoji Search
 emoji: 🔍
 colorFrom: yellow
-colorTo: orange
+colorTo: red
 sdk: docker
 pinned: false
 ---
 
-Semantic emoji search.
+Semantic emoji search using text and image embeddings.
