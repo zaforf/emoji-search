@@ -5,47 +5,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emoji Search</title>
     <style>
-        /* minimal clean styles */
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #333;
+            max-width: 800px;
+            padding: 0 20px;
+            font-size: 24px;
+            margin: 40px 20px;
         }
+
+        h1 {
+            font-size: 1.5em;
+            margin: 0 0 20px 0;
+            font-weight: bold;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+        }
+
         #searchBox {
-            width: 300px;
-            padding: 10px;
-            font-size: 16px;
+            font-size: 1em;
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
         }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+
         #results {
             margin-top: 20px;
         }
+
         #timeTaken {
-            margin-top: 10px;
+            margin-top: 20px;
+            color: #aaa;
+            font-size: 0.9em;
             font-style: italic;
-            color: gray;
         }
-        
+
+        .row {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 10px;
+            gap: 12px;
+        }
+
+        .score {
+            margin-left: auto;
+            color: #aaa;
+            font-size: 0.6em;
+        }
+
+        img.emoji {
+            width: 1em;
+            height: 1em;
+        }
     </style>
+    <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <h1>Emoji Search</h1>
-    <input type="text" id="searchBox" placeholder="Type to search for emojis...">
+    
+    <div class="controls">
+        <input type="text" id="searchBox" placeholder="Type to search..." autofocus>
+        <input type="range" id="alphaSlider" min="0" max="1" step="0.1" value="0.5">
+    </div>
+
     <div id="results"></div>
     <div id="timeTaken"></div>
+
     <script>
         const searchBox = document.getElementById('searchBox');
+        const alphaSlider = document.getElementById('alphaSlider');
         const resultsDiv = document.getElementById('results');
         const timeTakenDiv = document.getElementById('timeTaken');
 
-        searchBox.addEventListener('input', async () => {
+        async function runSearch() {
             const query = searchBox.value;
+            const alpha = alphaSlider.value;
+            
+            if (!query) {
+                resultsDiv.innerHTML = '';
+                return;
+            }
+
             const startTime = performance.now();
-            const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
+            const response = await fetch(`/search?query=${encodeURIComponent(query)}&alpha=${alpha}`);
             const data = await response.json();
             const endTime = performance.now();
 
-            resultsDiv.innerHTML = data.results.map(emoji => `<div>${emoji.emoji} - ${emoji.name}</div>`).join('');
+            resultsDiv.innerHTML = data.results.map(emoji => `
+                <div class="row">
+                    <span class="main-text">${emoji.emoji} ${emoji.name}</span>
+                    <span class="score">
+                        ${emoji.score.toFixed(3)} (${emoji.score_vis.toFixed(3)}, ${emoji.score_txt.toFixed(3)})
+                    </span>
+                </div>
+            `).join('');
+            
+            twemoji.parse(resultsDiv);
             timeTakenDiv.textContent = `Time taken: ${(endTime - startTime).toFixed(2)} ms`;
-        });
+        }
+
+        searchBox.addEventListener('input', runSearch);
+        alphaSlider.addEventListener('input', runSearch);
     </script>
 </body>
 </html>
