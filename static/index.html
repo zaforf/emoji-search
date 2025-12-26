@@ -4,6 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emoji Search</title>
+    <style>
+        /* minimal clean styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #searchBox {
+            width: 300px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        #timeTaken {
+            margin-top: 10px;
+            font-style: italic;
+            color: gray;
+        }
+        
+    </style>
 </head>
 <body>
     <h1>Emoji Search</h1>
@@ -22,7 +43,7 @@
             const data = await response.json();
             const endTime = performance.now();
 
-            resultsDiv.innerHTML = data.results.map(emoji => `<div>${emoji.char} - ${emoji.name}</div>`).join('');
+            resultsDiv.innerHTML = data.results.map(emoji => `<div>${emoji.emoji} - ${emoji.name}</div>`).join('');
             timeTakenDiv.textContent = `Time taken: ${(endTime - startTime).toFixed(2)} ms`;
         });
     </script>

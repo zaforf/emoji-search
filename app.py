@@ -1,9 +1,8 @@
 from flask import Flask, request
-import csv
+import pandas as pd
 from sentence_transformers import SentenceTransformer, util
 
-emoji_csv = "emoji_df.csv"
-emojis = list(csv.DictReader(open(emoji_csv)))
+emojis = pd.read_parquet("hf://datasets/badrex/LLM-generated-emoji-descriptions/data/train-00000-of-00001.parquet")
 app = Flask(__name__)
 
 @app.route('/search')
@@ -17,10 +16,10 @@ def search():
 
     results = []
     for hit in hits:
-        emoji_data = emojis[hit['corpus_id']]
+        emoji_data = emojis.iloc[hit['corpus_id']]
         results.append({
-            'char': emoji_data['emoji'],
-            'name': emoji_data['name'],
+            'emoji': emoji_data['character'],
+            'name': emoji_data['short description'],
             'score': hit['score']
         })
 
@@ -30,7 +29,16 @@ def search():
 def index():
     return app.send_static_file('index.html')
 
+def form_prompts():
+    result = []
+    for index, row in emojis.iterrows():
+        # Create prompt combining description and tags
+        prompt = f"{row["short description"]}, associated with: {", ".join(row["tags"])}"
+        result.append(prompt)
+    return result
+
 if __name__ == '__main__':
     model = SentenceTransformer('all-MiniLM-L6-v2')
-    embeddings = model.encode([row['name'] for row in emojis], convert_to_tensor=True)
+    prompts = form_prompts()
+    embeddings = model.encode(prompts, convert_to_tensor=True)
     app.run(debug=True)
