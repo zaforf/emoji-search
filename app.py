@@ -17,7 +17,6 @@ def search():
     alpha = float(request.args.get('alpha', 0.5))
     if not query:
         return {'results': []}
-    print(alpha)
 
     # encode and search
     q_txt = text_model.encode(query, convert_to_tensor=True)
