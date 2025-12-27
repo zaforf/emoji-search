@@ -1,5 +1,7 @@
 env/
 __pycache__/
 .DS_Store
-tiny_clip/model.safetensors
+tiny_clip/
 data/sheet_twitter_64.png
+data/*.pt
+data/*.parquet

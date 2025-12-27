@@ -9,14 +9,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
+COPY embeddings.py .
+COPY data/emoji.json data/
+RUN mkdir -p data && python embeddings.py
+
 COPY app.py .
 COPY static/ static/
-COPY tiny_clip/ tiny_clip/
-COPY data/cleaned_emojis.parquet data/
-COPY data/text_embeddings.pt data/
-COPY data/image_embeddings.pt data/
 
 ENV PORT=7860
 EXPOSE 7860
 
-CMD ["gunicorn", "-w", "1", "--threads", "4", "-b", "0.0.0.0:7860", "app:app"]
+CMD ["gunicorn", "-w", "1", "--threads", "2", "-b", "0.0.0.0:7860", "app:app"]
