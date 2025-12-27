@@ -44,10 +44,35 @@
         }
 
         #timeTaken {
-            margin-top: 20px;
+            margin-top: 15px;
             color: #aaa;
-            font-size: 0.9em;
+            font-size: 0.6em;
             font-style: italic;
+        }
+
+        #timingBars {
+            margin-top: 20px;
+        }
+
+        .timing-row {
+            display: flex;
+            height: 20px;
+            margin-bottom: 4px;
+        }
+
+        .timing-bar {
+            height: 100%;
+        }
+
+        .timing-labels {
+            display: flex;
+            font-size: 10px;
+            color: #666;
+        }
+
+        .timing-label {
+            text-align: center;
+            overflow: hidden;
         }
 
         .row {
@@ -79,13 +104,17 @@
     </div>
 
     <div id="results"></div>
+    <div id="timingBars"></div>
     <div id="timeTaken"></div>
 
     <script>
         const searchBox = document.getElementById('searchBox');
         const alphaSlider = document.getElementById('alphaSlider');
         const resultsDiv = document.getElementById('results');
+        const timingBarsDiv = document.getElementById('timingBars');
         const timeTakenDiv = document.getElementById('timeTaken');
+
+        const colors = ['#4285f4', '#ea4335', '#fbbc05', '#34a853', '#9c27b0'];
 
         async function runSearch() {
             const query = searchBox.value;
@@ -93,6 +122,8 @@
             
             if (!query) {
                 resultsDiv.innerHTML = '';
+                timingBarsDiv.innerHTML = '';
+                timeTakenDiv.textContent = '';
                 return;
             }
 
@@ -104,14 +135,27 @@
             resultsDiv.innerHTML = data.results.map(emoji => `
                 <div class="row">
                     <span class="main-text">${emoji.emoji} ${emoji.name}</span>
-                    <span class="score">
+                    <span class="score" title="combined (visual, text)">
                         ${emoji.score.toFixed(3)} (${emoji.score_vis.toFixed(3)}, ${emoji.score_txt.toFixed(3)})
                     </span>
                 </div>
             `).join('');
             
             twemoji.parse(resultsDiv);
-            timeTakenDiv.textContent = `Time taken: ${(endTime - startTime).toFixed(2)} ms`;
+
+            // Render timing bars
+            const totalMs = data.timing.reduce((sum, t) => sum + t.ms, 0);
+            const bars = data.timing.map((t, i) => {
+                const pct = (t.ms / totalMs) * 100;
+                return `<div class="timing-bar" style="width:${pct}%; background:${colors[i % colors.length]}" title="${t.name}: ${t.ms.toFixed(2)}ms"></div>`;
+            }).join('');
+            const labels = data.timing.map((t, i) => {
+                const pct = (t.ms / totalMs) * 100;
+                return `<div class="timing-label" style="width:${pct}%; color:${colors[i % colors.length]}">${t.ms.toFixed(1)}ms</div>`;
+            }).join('');
+            timingBarsDiv.innerHTML = `<div class="timing-row">${bars}</div><div class="timing-labels">${labels}</div>`;
+
+            timeTakenDiv.textContent = `${totalMs.toFixed(1)}ms server | ${(endTime - startTime).toFixed(1)}ms total`;
         }
 
         searchBox.addEventListener('input', runSearch);

@@ -1,6 +1,7 @@
 from flask import Flask, request
 import pandas as pd
 import torch
+import time
 from sentence_transformers import SentenceTransformer, util
 
 emojis = pd.read_parquet("data/cleaned_emojis.parquet")
@@ -16,17 +17,30 @@ def search():
     query = request.args.get('query', '')
     alpha = float(request.args.get('alpha', 0.5))
     if not query:
-        return {'results': []}
+        return {'results': [], 'timing': []}
 
-    # encode and search
+    timing = []
+
+    t0 = time.perf_counter()
     q_txt = text_model.encode(query, convert_to_tensor=True)
+    timing.append({'name': 'text_encode', 'ms': (time.perf_counter() - t0) * 1000})
+
+    t0 = time.perf_counter()
     scores_txt = util.cos_sim(q_txt, text_embeddings)[0]
+    timing.append({'name': 'text_cos_sim', 'ms': (time.perf_counter() - t0) * 1000})
 
+    t0 = time.perf_counter()
     q_vis = clip_model.encode(query, convert_to_tensor=True)
-    scores_vis = util.cos_sim(q_vis, image_embeddings)[0]
+    timing.append({'name': 'clip_encode', 'ms': (time.perf_counter() - t0) * 1000})
 
+    t0 = time.perf_counter()
+    scores_vis = util.cos_sim(q_vis, image_embeddings)[0]
+    timing.append({'name': 'clip_cos_sim', 'ms': (time.perf_counter() - t0) * 1000})
+
+    t0 = time.perf_counter()
     combined_scores = alpha * scores_txt + (1 - alpha) * scores_vis
     top_scores, top_indices = torch.topk(combined_scores, k=10)
+    timing.append({'name': 'top_k', 'ms': (time.perf_counter() - t0) * 1000})
 
     results = []
     for score, idx in zip(top_scores, top_indices):
@@ -40,7 +54,7 @@ def search():
             'score_vis': float(scores_vis[idx])
         })
 
-    return {'results': results}
+    return {'results': results, 'timing': timing}
 
 @app.route('/')
 def index():
