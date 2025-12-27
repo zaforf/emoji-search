@@ -1,12 +1,20 @@
+import os
+import urllib.request
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 import torch
 import PIL.Image
 
 SKIN_TONE_MODIFIERS = ['1F3FB', '1F3FC', '1F3FD', '1F3FE', '1F3FF']
+SPRITE_SHEET_URL = "https://cdn.jsdelivr.net/npm/emoji-datasource-twitter@16.0.0/img/twitter/sheets/64.png"
 SPRITE_SHEET_PATH = "data/sheet_twitter_64.png"
 INDEX_PATH = "data/emoji.json"
 DATASET_PATH = "hf://datasets/badrex/LLM-generated-emoji-descriptions/data/train-00000-of-00001.parquet"
+
+def download_sprite_sheet():
+    if not os.path.exists(SPRITE_SHEET_PATH):
+        print("downloading sprite sheet...")
+        urllib.request.urlretrieve(SPRITE_SHEET_URL, SPRITE_SHEET_PATH)
 
 def clean_dataset(df):
     # filter out skin tone modifiers
@@ -24,6 +32,7 @@ def generate_text_embeddings(df, model_name='all-MiniLM-L6-v2'):
     return model.encode(prompts.tolist(), convert_to_tensor=True)
 
 def generate_image_embeddings(df, model_name='clip-ViT-B-32'):
+    download_sprite_sheet()
     emoji_index = pd.read_json(INDEX_PATH)
     sheet = PIL.Image.open(SPRITE_SHEET_PATH)
     white_bg = PIL.Image.new("RGB", (64, 64), (255, 255, 255))
